@@ -17,8 +17,6 @@ DATA_CSV = "data.csv"
 
 METRICS = ["HGO", "LGO", "LTC", "RAW", "VMain"]
 
-COLOR_POOL = px.colors.qualitative.Plotly
-
 # ======================================================
 # App
 # ======================================================
@@ -72,6 +70,17 @@ def add_run_index(df):
 def keep_latest_run_only(df):
     latest = df.groupby(["SerialID", "Channel"])["RunIndex"].transform("max")
     return df[df["RunIndex"] == latest]
+
+
+def generate_distinct_colors(n, saturation=55, lightness=45):
+    """
+    Generate n visually distinct, non-high-contrast colors
+    using evenly spaced hues in HSL space.
+    """
+    return [
+        f"hsl({int(360 * i / n)}, {saturation}%, {lightness}%)"
+        for i in range(n)
+    ]
 
 
 # ======================================================
@@ -161,7 +170,7 @@ def load_csv(contents):
 
 
 # ======================================================
-# Plot (mean / std overlays, NO ghosting)
+# Plot (dense-safe colors + mean/std overlays)
 # ======================================================
 @app.callback(
     Output("plot", "figure"),
@@ -209,7 +218,8 @@ def update_plot(data, metric, compare_serials, top_n):
         subplot_titles=[f"{metric} 1–{top_n}", f"{metric} {top_n + 1}+"],
     )
 
-    color_map = {s: COLOR_POOL[i % len(COLOR_POOL)] for i, s in enumerate(serials)}
+    colors = generate_distinct_colors(len(serials))
+    color_map = dict(zip(serials, colors))
 
     for row_df, row_idx in [(df_top, 1), (df_bot, 2)]:
         for s in serials:
@@ -219,12 +229,12 @@ def update_plot(data, metric, compare_serials, top_n):
 
             col = color_map[s]
 
-            # Main data
+            # Main data (micro-tweak: thinner line)
             fig.add_scatter(
                 x=g["X"],
                 y=g[metric],
                 name=s,
-                line=dict(color=col),
+                line=dict(color=col, width=1.2),
                 showlegend=(row_idx == 1),
                 row=row_idx,
                 col=1,
