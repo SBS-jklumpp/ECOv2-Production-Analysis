@@ -1,41 +1,81 @@
-# Python Project Template
+# ECOv2 Stability Data Analysis
 
-![Sea-Bird Logo](https://www.seabird.com/mdf_cb6d67ba3dcf931f6a6394cdc677d16018/en/seabird_com/images/header-logo.png "Sea-Bird logo image")
+A Dash-based interactive tool for analyzing ECOv2 stability test data across serial numbers, channels, and metrics.
 
-[This a crude fork of this PyPA sample project.][pypa src]
+This application is designed for **engineering validation and production readiness analysis**, with support for:
+- Multi-serial comparison
+- Per-serial statistical overlays (mean ± σ)
+- Large CSV ingestion
+- Clear visual separation of early vs late samples
+- Deterministic, reproducible plots
 
-Here's a template for your Python project with a few tools working.
-Reconfigure according to your needs.
+---
 
-Here's a new project checklist:
-1. Create a new repository using this repository as a template.
-1. Clone your new repository to your workspace.
-1. Set your import name by renaming the directory `src/packageimportname`. The import name is used in Python code.
-1. Set your distribution name by setting the project name in the `pyproject.toml` file. The distribution name is used with pip. I advise [normalizing your import name][norm] and prepending `sbs-`.
-1. Install your package for development by calling `python -m pip install -e .` in the project directory. This will also install the necessary development tools to your Python environment.
-1. Confirm the distribution installation by reading the `python -m pip list` output.
-1. Test the ability to import by calling `python -c "import packageimportname"`. No exception should be thrown.
-1. Test the ability to build by calling `python -m build` in the project directory. This should create a `dist` directory containing the wheel file.
-1. Test the unit testing demo by calling `python -m pytest` in the project directory.
-1. Edit the environment list in `tox.ini` based on available Python versions. Check your versions in Windows by calling `py -0`.
-1. Test tox by calling `python -m tox` in the project directory. This should build, install, and test in virtual environments for all specified Python versions.
-1. Update this `README.md`.
-1. Update LICENSE.txt. The default is an MIT license. Do not use the MIT license for proprietary software.
-1. Commit often.
+## Features
 
-## Github Actions
+### 📊 Plotting
+- Two synchronized plots:
+  - **Top plot:** early samples (default 1–100)
+  - **Bottom plot:** later samples (default 101+)
+- Selectable metrics:
+  - `HGO`, `LGO`, `LTC`, `RAW`, `VMain`
+- One color per serial number (stable across a plot)
+- Optional multi-serial comparison
 
-The `.github/workflows` directory contains a working Github workflow in `test.yml` which will test across interpreter versions and operating systems as part of the pull request process.
+### 📈 Statistical Overlays
+For each plotted serial:
+- Mean line (dashed)
+- +1σ and −1σ lines (dotted)
 
-## Project Structure
+These overlays are computed from the same data shown in the plot.
 
-The [src layout][src v flat] is used to enforce editable installation and prevent workspace code from conflicting with environment code.
-Remember that the `src` directory should always only contain one subdirectory. That subdirectory is your package!
+### 🧪 Data Handling
+- Upload a master `data.csv`
+- Automatically normalizes:
+  - Serial numbers
+  - Channels
+  - Sample counts
+  - Timestamps
+- Supports multiple runs per serial
+- Automatically selects **latest run only** for plotting
 
-[packaging guide]: https://packaging.python.org
-[distribution tutorial]: https://packaging.python.org/tutorials/packaging-projects/
-[pypa src]: https://github.com/pypa/sampleproject
-[norm]: https://packaging.python.org/en/latest/specifications/name-normalization/
-[pytest]: https://docs.pytest.org/en/7.4.x/
-[tox]: https://tox.wiki/en/4.11.3/
-[src v flat]: https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/
+### ⚠️ Validation Feedback
+- Warns when selected serials have no data
+- Does not silently fail
+- Continues plotting valid serials when some are missing
+
+---
+
+## Data Requirements
+
+The input CSV **must** contain the following columns:
+
+### Required
+| Column Name | Description |
+|------------|------------|
+| `SerialNumber` | Full serial identifier (e.g. `ECOv2-10091`) |
+| `Channel` | Channel number (1-based integer) |
+| `SampleCount` | Sample index (numeric, increasing) |
+| `HGO` | Measurement |
+| `LGO` | Measurement |
+| `LTC` | Measurement |
+| `RAW` | Measurement |
+| `VMain` | Measurement |
+
+### Optional (recommended)
+| Column Name | Description |
+|------------|------------|
+| `Date` | Date string |
+| `Time` | Time string |
+| `FileMTime` | Unix timestamp (used if Date/Time missing) |
+
+---
+
+## Installation
+
+### Python Version
+- Python **3.9+** recommended
+
+### Install Dependencies
+```bash
+pip install -r requirements.txt
